@@ -6,7 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using AE.Application.Interfaces;
 using AE.Domain.Abstract;
+using AE.Domain.Entities;
+using Google.Apis.AndroidManagement.v1.Data;
 using Microsoft.EntityFrameworkCore;
+using User = AE.Domain.Entities.User;
 
 namespace AE.Infrastructure.Persistence
 {
@@ -20,6 +23,11 @@ namespace AE.Infrastructure.Persistence
         {
             _currentUserService = currentUserService;
         }
+
+        public DbSet<Organization> Organizations { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<SignUpDetail> SignUpDetails { get; set; }
+
         #region SaveChanges
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken)

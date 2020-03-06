@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AE.Application.Auth;
 using AE.Application.Interfaces;
 using AE.Domain.Abstract;
+using AE.Domain.Entities;
+using AE.Domain.Enums;
 using Google.Apis.AndroidManagement.v1;
 using Google.Apis.AndroidManagement.v1.Data;
 using Microsoft.Extensions.Configuration;
@@ -18,77 +19,35 @@ namespace AE.Application.Enterprises
         private readonly AndroidManagementService _service;
         private readonly IConfiguration _configuration;
         private readonly IAppDbContext _context;
+        private readonly ICurrentUserService _currentUser;
         public EnterpriseManagement(
             IConfiguration configuration,
-            IAppDbContext context)
+            IAppDbContext context,
+            ICurrentUserService currentUser)
         {
             _configuration = configuration;
             _context = context;
+            _currentUser = currentUser;
             _service = configuration.GetAndroidService();
         }
 
-        public async Task<Response<SignupUrl>> SignUp()
+        public async Task<Response<Enterprise>> Create(string enterpriseToken, string signUpUrl)
         {
             try
             {
-                var signUpCreateResource = _service.SignupUrls.Create();
+                if (enterpriseToken == null) throw new ArgumentNullException(nameof(enterpriseToken));
+                if (signUpUrl == null) throw new ArgumentNullException(nameof(signUpUrl));
 
-                signUpCreateResource.CallbackUrl = _configuration.GetSection("CallbackUrl").Value;
-                signUpCreateResource.ProjectId = _configuration.GetSection("ProjectId").Value;
-
-                var signupUrl = await signUpCreateResource.ExecuteAsync();
-
-                return new Response<SignupUrl>(
-                    signupUrl,
-                    "Sign up request completed Successfully. SignUp Url contains the enterprise token.");
-            }
-            catch (Exception e)
-            {
-                return new Response<SignupUrl>(
-                    e,
-                    "Sign up request Failed");
-
-            }
-        }
-
-        public async Task<Response<string>> SaveSignUpDetails(SignupUrl signupUrl)
-        {
-            try
-            {
-                var enterpriseToken = signupUrl.Url.Split("token=").LastOrDefault();
-
-
-                await _context.SaveChangesAsync(CancellationToken.None);
-                
-                return new Response<string>(
-                    enterpriseToken,
-                    "SignUp Saved Successfully");
-            }
-            catch (Exception e)
-            {
-                return new Response<string>(
-                    e,
-                    "Sign up request Failed");
-
-            }
-
-           
-        }
-
-        public async Task<Response<Enterprise>> CreateEnterprise(string enterpriseToken, string signUpUrl)
-        {
-            try
-            {
                 var enterprise = new Enterprise
                 {
                     EnabledNotificationTypes = new [] {"ENROLLMENT", "STATUS_REPORT", "COMMAND"},
                     Name = "Catalyst IT",
                     SigninDetails = new List<SigninDetail>() { new SigninDetail { SigninUrl = signUpUrl, SigninEnrollmentToken = "enterpriseToken" } }
                 };
-                var createdenterprise = await _service.Enterprises.Create(enterprise).ExecuteAsync();
+                var createdEnterprise = await _service.Enterprises.Create(enterprise).ExecuteAsync();
 
                 return new Response<Enterprise>(
-                    createdenterprise,
+                    createdEnterprise,
                     "Enterprise Created Successfully");
             }
             catch (Exception e)
@@ -99,6 +58,59 @@ namespace AE.Application.Enterprises
             }
         }
 
-       
+        public Response<List<Enterprise>> List()
+        {
+
+            try
+            {
+                var details = _context.SignUpDetails
+                                    .Where(u => 
+                                        u.OrganizationId == _currentUser.OrganizationId 
+                                        && u.Status == EStatus.Pending)
+                                    .ToList();
+                var enterprises = details.Select(
+                                                detail => _service.Enterprises.Get(detail.EnterpriseId).Execute()).ToList();
+
+                return new Response<List<Enterprise>>(
+                    enterprises,
+                    "Enterprise Created Successfully");
+            }
+            catch (Exception e)
+            {
+                return new Response<List<Enterprise>>(
+                    e,
+                    "Enterprise Create request failed");
+            }
+        }
+
+        public Task<Response<bool>> Remove()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Response<Enterprise>> Get(string Id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Response<Enterprise>> Update(Enterprise enterprise)
+        {
+            try
+            {
+                if (enterprise == null) throw new ArgumentNullException(nameof(enterprise));
+                
+                var createdEnterprise = await _service.Enterprises.Patch(enterprise, enterprise.Name).ExecuteAsync();
+
+                return new Response<Enterprise>(
+                    createdEnterprise,
+                    "Enterprise Created Successfully");
+            }
+            catch (Exception e)
+            {
+                return new Response<Enterprise>(
+                    e,
+                    "Enterprise Create request failed");
+            }
+        }
     }
 }

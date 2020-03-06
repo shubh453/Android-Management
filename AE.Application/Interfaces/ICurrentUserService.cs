@@ -6,6 +6,7 @@ namespace AE.Application.Interfaces
 {
     public interface ICurrentUserService
     {
-        int UserId { get; set; }
+        long UserId { get; set; }
+        int OrganizationId { get; set; }
     }
 }

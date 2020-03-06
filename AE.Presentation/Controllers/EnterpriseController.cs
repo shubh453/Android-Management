@@ -21,23 +21,13 @@ namespace AE.Presentation.Controllers
             _enterpriseManagement = enterpriseManagement;
         }
 
-        [ActionName("SignUp")]
-        [HttpGet]
-        public async Task<Response<SignupUrl>> SignUp()
-        {
-            return await _enterpriseManagement.SignUp();
-        }
-
-        public async Task CompleteSignUp(SignupUrl signupUrl)
-        {
-            await _enterpriseManagement.SaveSignUpDetails(signupUrl);
-        }
+        
 
         [ActionName("Create")]
         [HttpPost]
         public async Task<Response<Enterprise>> Create(string enterpriseToken, string signUpUrl)
         {
-            return await _enterpriseManagement.CreateEnterprise(enterpriseToken, signUpUrl);
+            return await _enterpriseManagement.Create(enterpriseToken, signUpUrl);
         }
 
 

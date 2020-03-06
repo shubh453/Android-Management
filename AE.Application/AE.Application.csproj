@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Google.Apis.AndroidManagement.v1" Version="1.44.0.1877" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.1.2" />
   </ItemGroup>
 
